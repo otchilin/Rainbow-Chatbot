@@ -127,28 +127,30 @@ class SDK {
 
         let extContent = null;
 
-        if (content) {
-            /**
-             * If object contains extendedContent parameter we consider it as json
-             * extended format and encode it.
-             * Else we consider it as a simple Markdown format
-             */
-            if (content.extendedContent) {
-                extContent = {
-                    "type": "application/json",
-                    "message": JSON.stringify(content.extendedContent)
-                }
-            } else {
-                extContent = {
-                    "type": "text/markdown",
-                    "message": content.messageMarkdown
+        try {
+            if (content) {
+                /**
+                 * If object contains extendedContent parameter we consider it as json
+                 * extended format and encode it.
+                 * Else we consider it as a simple Markdown format
+                 */
+                if (content.extendedContent) {
+                    extContent = {
+                        "type": "application/json",
+                        "message": JSON.stringify(content.extendedContent)
+                    }
+                } else if (content.messageMarkdown) {
+                    extContent = {
+                        "type": "text/markdown",
+                        "message": content.messageMarkdown
+                    }
                 }
             }
+        } catch (e) {
+            this._logger.log("error", LOG_ID + "sendAMessage() - Error while preparing message to send : " + e.message);
         }
 
         this._nodeSDK.im.sendMessageToJid(message, jid, "en", extContent, type);
-
-
     }
 }
 

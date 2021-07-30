@@ -85,11 +85,11 @@ class ChoicePlug {
             }
 
             // Default title for submit button, can be overloaded by adcTemplateOptions
-            adcData.submitButton= "OK";
+            adcData.submitButton = "OK";
 
             // Merge optional parameters to the data used for expansion
             if (step.adcTemplateOptions) {
-                lodash.merge(adcData,step.adcTemplateOptions);
+                lodash.merge(adcData, step.adcTemplateOptions);
             }
 
 
@@ -98,7 +98,7 @@ class ChoicePlug {
                 if (card) {
                     event.emit("onSendMessage", {
                         message: step.value,
-                        extendedContent: card,
+                        extendedContent: {"adaptivecard": card, "extra": step.extraData ? step.extraData : null},
                         jid: work.jid,
                         type: "AdaptiveCard"
                     });
