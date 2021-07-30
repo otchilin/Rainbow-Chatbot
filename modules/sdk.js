@@ -34,23 +34,28 @@ class SDK {
 
     listenToIncomingMessage() {
         this._nodeSDK.events.on("rainbow_onmessagereceived", (message) => {
-    
+
             // Do not deal with messages sent by the bot or the bot identity connected in web, mobile...
-            if(!message.cc) {
+            if (!message.cc) {
                 this._nodeSDK.im.markMessageAsRead(message);
 
                 this.getContact(message.fromJid).then(contact => {
+                    let msgType = Message.MESSAGE_TYPE.MESSAGE;
+                    if (message.alternativeContent && message.alternativeContent.length > 0) {
+                        msgType = Message.MESSAGE_TYPE.FORMSUBMIT;
+                    }
                     let msg = new Message({
-                        type: Message.MESSAGE_TYPE.MESSAGE,
+                        type: msgType,
                         jid: message.fromJid,
                         from: contact,
                         value: message.content,
                         lang: message.lang,
-                        date: new Date()
+                        date: new Date(),
+                        altContent: message.alternativeContent[0]
                     });
 
                     this._logger.log("debug", LOG_ID + "listenToIncomingMessage() - Received " + msg.type);
-                    
+
                     this._event.emit("onmessagereceived", msg);
                 });
             }
@@ -63,7 +68,14 @@ class SDK {
 
     listenToOutgoingMessage() {
         this._event.on("onSendMessage", (json) => {
-            this.sendAMessage(json.message, json.jid, json.type, json.messageMarkdown);
+            let content = {};
+            if (json.messageMarkdown) {
+                content.messageMarkdown = json.messageMarkdown;
+            }
+            if (json.extendedContent) {
+                content.extendedContent = json.extendedContent;
+            }
+            this.sendAMessage(json.message, json.jid, json.type, content);
         });
     }
 
@@ -111,19 +123,33 @@ class SDK {
         });
     }
 
-    sendAMessage(message, jid, type, messageMarkdown) {
+    sendAMessage(message, jid, type, content) {
 
-        let markdown = null;
-        if (messageMarkdown) {
-            markdown = {
-                "type": "text/markdown",
-                "message": messageMarkdown 
+        let extContent = null;
+
+        if (content) {
+            /**
+             * If object contains extendedContent parameter we consider it as json
+             * extended format and encode it.
+             * Else we consider it as a simple Markdown format
+             */
+            if (content.extendedContent) {
+                extContent = {
+                    "type": "application/json",
+                    "message": JSON.stringify(content.extendedContent)
+                }
+            } else {
+                extContent = {
+                    "type": "text/markdown",
+                    "message": content.messageMarkdown
+                }
             }
         }
 
-        this._nodeSDK.im.sendMessageToJid(message, jid, "en", markdown, type);
-    }
+        this._nodeSDK.im.sendMessageToJid(message, jid, "en", extContent, type);
 
+
+    }
 }
 
 module.exports = SDK;

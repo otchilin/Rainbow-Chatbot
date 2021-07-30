@@ -22,7 +22,7 @@ class Tags {
     }
 
     start(event, logger) {
-        
+
         let that = this;
 
         return new Promise((resolve) => {
@@ -55,8 +55,9 @@ class Tags {
                 foundOrEmpty = true;
             }
             else {
-                if(this.isDefined(tag)) {
-                    msg.tag = tag;
+                if(this.isDefined(tag[0])) {
+                    msg.tag = tag[0];
+                    msg.params = tag.slice(1);
                     msg.type = Message.MESSAGE_TYPE.COMMAND;
                     foundOrEmpty = true;
                 }

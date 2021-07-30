@@ -13,6 +13,7 @@ class Factory {
     constructor() {
         this._event = null;
         this._logger = null;
+        this._adcHelper = null;
         this._action = {
             "choice": ChoicePlug,
             "command": CommandPlug,
@@ -22,17 +23,18 @@ class Factory {
         };
     }
 
-    start(event, logger) {
+    start(event, logger, adcpHelper) {
         this._event = event;
         this._logger = logger;
+        this._adcHelper = adcpHelper;
 
-        return new Promise(function(resolve) {
+        return new Promise(function (resolve) {
             resolve();
         });
     }
 
     log(level, message, content) {
-        if(this._logger) {
+        if (this._logger) {
             this._logger.log(level, message);
         } else {
             console.log(message, content);
@@ -40,11 +42,11 @@ class Factory {
     }
 
     isValid(work, step, content) {
-        //todo
-        if(step.type in this._action) {
+        if (step.type in this._action) {
             return this._action[step.type].isValid(work, step, content, this._event, this._logger);
         }
-        
+
+
         this.log("info", LOG_ID + "isValid() - no plug found for work[" + work.id + "] and step " + step.type);
         return false;
     }
@@ -59,37 +61,36 @@ class Factory {
 
         this.log("info", LOG_ID + "findNextStep() - Enter");
 
-        if(!stepId) {
-            this.log("info", LOG_ID + "findNextStep() - Work[" + work.id + "] has no step defined" );
+        if (!stepId) {
+            this.log("info", LOG_ID + "findNextStep() - Work[" + work.id + "] has no step defined");
             return null;
         }
 
         step = work.scenario[stepId];
 
-        if(!step) {
-            this.log("info", LOG_ID + "findNextStep() - Work[" + work.id + "] has no next step defined" );
+        if (!step) {
+            this.log("info", LOG_ID + "findNextStep() - Work[" + work.id + "] has no next step defined");
             return null;
         }
 
-        if(!(step.type in this._action)) {
+        if (!(step.type in this._action)) {
             return null;
         }
-        
+
         next = this._action[step.type].getNextStep(work, step, this._logger);
 
-        this.log("info", LOG_ID + "findNextStep() - Work[" + work._id + "] has a next step defined " + next );
+        this.log("info", LOG_ID + "findNextStep() - Work[" + work._id + "] has a next step defined " + next);
         return next;
     }
 
     execute(work, step) {
-        if(step.type in this._action) {
+        if (step.type in this._action) {
             try {
-                this._action[step.type].execute(work, step, this._event, this._logger);
-            } catch( err ) {
+                this._action[step.type].execute(work, step, this._event, this._logger, this._adcHelper);
+            } catch (err) {
                 this.log("error", LOG_ID + "execute() - work " + work.id + ", at step " + step.type + "experienced an error: ", err);
             }
-        }
-        else {
+        } else {
             work.pending = false;
             this.log("info", LOG_ID + "execute() - no plug found for work[" + work.id + "] and step " + step.type);
         }

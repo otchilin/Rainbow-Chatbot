@@ -1,6 +1,6 @@
 {
   "name": "rainbow-chatbot",
-  "version": "1.76.0",
+  "version": "1.76.1",
   "description": "Rainbow ChatBot library for the Rainbow SDK for Node.JS",
   "main": "index.js",
   "scripts": {
@@ -11,11 +11,15 @@
   "author": "AL-Enterprise <support@openrainbow.com>",
   "license": "MIT",
   "dependencies": {
+    "adaptivecards-templating": "^2.1.0",
     "circular-json": "^0.5.9",
-    "comment-json": "^2.4.2",
+    "comment-json": "^4.1.1",
     "cuid": "^2.1.8",
-    "moment": "^2.24.0",
-    "rainbow-node-sdk": "^1.76.0",
+    "generic-json-sanitizer": "^1.1.0",
+    "lodash": "^4.17.21",
+    "moment": "^2.29.1",
+    "rainbow-node-sdk": "^2.0.1-lts.2",
+    "sanitize": "^2.1.0",
     "winston": "^3.2.1"
   },
   "devDependencies": {

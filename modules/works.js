@@ -16,7 +16,7 @@ class Works {
     }
 
     start(event, logger, factory) {
-        
+
         let that = this;
 
         return new Promise((resolve) => {
@@ -59,7 +59,7 @@ class Works {
                 work.state === Work.STATE.NEW ||
                 work.state === Work.STATE.BLOCKED ||
                 work.state === Work.STATE.TERMINATED) {
-                
+
                 work.abort();
                 this._event.emit("ontaskfinished", work);
             }
@@ -68,12 +68,16 @@ class Works {
 
     getWork(message, scenario) {
 
-        let createWork = (jid, tag, from, scenario) => {
+        let createWork = (jid, tag, from, scenario, step) => {
             let work = new Work(this._event, this._logger, this._factory);
             work.jid = jid;
             work.tag = tag;
             work.from = from;
             work.scenario = scenario;
+            if(step) {
+                work._stepId = step;
+                work._state = Work.STATE.JUMP;
+            }
             return work;
         };
 
@@ -82,7 +86,7 @@ class Works {
         // Create new work if tag + no existing work
         if (!work) {
             if (message.type === Message.MESSAGE_TYPE.COMMAND) {
-                work = createWork(message.jid, message.tag, message.from, scenario);
+                work = createWork(message.jid, message.tag, message.from, scenario, message.params[0]);
                 this.log("debug", LOG_ID + "getWork() - Create new work " + work.id + " | " + work.tag);
                 this.addWork(work);
             } else {
@@ -91,9 +95,9 @@ class Works {
         // Reuse existing work
         } else {
             // If command send, abort current work and create a new one
-            if(message.type === "command") {
+            if(message.type === Message.MESSAGE_TYPE.COMMAND) {
                 work.abort();
-                work = createWork(message.jid, message.tag, message.from, scenario);
+                work = createWork(message.jid, message.tag, message.from, scenario, message.params[0]);
                 this.log("debug", LOG_ID + "getWork() - Create new work " + work.id + " | " + work.tag);
                 this.addWork(work);
             } else {

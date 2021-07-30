@@ -1,13 +1,14 @@
-function getHashTags(inputText) {  
-    const regex = /(^|\B)#(?![0-9_-]+\b)([a-zA-Z0-9_-]{1,30})(\b|\r)/g;
+function getHashTags(inputText) {
+    const regex = /(^|\B)#(?![0-9_-]+\b)([a-zA-Z0-9_\-/]{1,30})(\b|\r)/g;
     var matches = [];
-    var match;
+    var match, splitted;
 
     while ((match = regex.exec(inputText))) {
-        matches.push(match[2]);
+        splitted = match[2].split('/'); // Find parameters
+        matches.push(splitted);
     }
 
     return matches;
 }
 
-module.exports = getHashTags; 
+module.exports = getHashTags;

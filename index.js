@@ -12,6 +12,8 @@ const Works = require("./modules/works");
 const Delayer = require("./modules/delayer");
 const Factory = require("./modules/plugins/factory");
 
+const adcHelper = require("./modules/adaptiveCards.js");
+
 const LOG_ID = "CHATBOT - ";
 
 class RainbowAgent {
@@ -40,6 +42,8 @@ class RainbowAgent {
         this.works = new Works(this.sdk);
         this.delayer = new Delayer();
         this.factory = new Factory();
+
+        this.adcHelper = new adcHelper();
 
         // Callback for onMessage()
         this._callbackMessage = null;
@@ -83,7 +87,11 @@ class RainbowAgent {
         }).then(() => {
             return that.delayer.start(that.events, that.logger);
         }).then(() => {
-            return that.factory.start(that.events, that.logger);
+            if (that.options && that.options.adaptivecards && that.options.adaptivecards.path !== '') {
+                return that.adcHelper.start(that.logger, that.options.adaptivecards.path);
+            }
+        }).then(() => {
+            return that.factory.start(that.events, that.logger, that.adcHelper);
         }).then(() => {
             return that.queue.start(that.events, that.logger, that.options);
         }).then(() => {
@@ -118,7 +126,7 @@ class RainbowAgent {
 
         return new Promise((resolve) => {
 
-            if(!that._callbackMessage) {
+            if (!that._callbackMessage) {
                 resolve();
             } else {
 
@@ -151,20 +159,30 @@ class RainbowAgent {
                 work = that.works.getWork(msg, scenario);
 
                 // Add to queue if work
-                if(!work) {
+                if (!work) {
                     that.logger.log("warn", LOG_ID + "onmessagereceived() - Incorrect message received");
                     return;
                 }
 
-                if(work.queued) {
+                if (work.queued) {
                     that.logger.log("warn", LOG_ID + "onmessagereceived() - Existing work is running. No user input expected...");
                     return;
                 }
 
-                // Store message if scenario is inProgress
-                if(work.state === Work.STATE.INPROGRESS) {
+                // todo : move this code in other lib
+                // Process alternative content from msg if available
 
-                    if(!this.factory.isValid(work, work.scenario[work.step], msg.value)) {
+                const stepDetails = work.scenario[work.step];
+                // process alternative content
+                // Overload the msg value with step corresponding answer
+                if (msg.altContent && (stepDetails.type + '-answer' in msg.altContent)) {
+                    msg.value = msg.altContent[stepDetails.type + '-answer'];
+                }
+
+                // Store message if scenario is inProgress
+                if (work.state === Work.STATE.INPROGRESS) {
+
+                    if (!this.factory.isValid(work, work.scenario[work.step], msg.value)) {
                         return;
                     }
                     work.historize(msg);
@@ -172,12 +190,12 @@ class RainbowAgent {
 
                 that.fireEvent(work, msg).then((routedStep) => {
 
-                    if(routedStep) {
+                    if (routedStep) {
                         // force next step
                         work.forcedNextStep = routedStep;
                     }
 
-                    if(work.waiting) {
+                    if (work.waiting) {
                         that.delayer.delay(work);
                     } else {
                         that.queue.addToQueue(work);
@@ -196,19 +214,19 @@ class RainbowAgent {
                 work.state !== Work.STATE.ABORTED &&
                 !work.pending) {
 
-                if(that._isEnabled) {
-                    if(work.external) {
+                if (that._isEnabled) {
+                    if (work.external) {
 
                         that.fireEvent(work, null).then((routedStep) => {
 
                             work.external = false;
 
-                            if(routedStep) {
+                            if (routedStep) {
                                 // force next step
                                 work.forcedNextStep = routedStep;
                             }
 
-                            if(work.waiting) {
+                            if (work.waiting) {
                                 that.delayer.delay(work);
                             } else {
                                 that.queue.addToQueue(work);
@@ -216,22 +234,19 @@ class RainbowAgent {
                         });
 
                     } else {
-                        if(work.waiting) {
+                        if (work.waiting) {
                             that.delayer.delay(work);
                         } else {
                             that.queue.addToQueue(work);
                         }
                     }
-                }
-                else {
+                } else {
                     that.logger.log("warn", LOG_ID + "onmessagereceived() - Input not taken into account. Mode is disabled...");
                 }
-            }
-            else {
-                if(work.pending) {
+            } else {
+                if (work.pending) {
                     that.logger.log("info", LOG_ID + "ontaskfinished() - Work[" + work.id + "] is waiting for incoming inputs...");
-                }
-                else {
+                } else {
                     that.logger.log("info", LOG_ID + "ontaskfinished() - Work [" + work.id + "] is closed, blocked or aborted");
 
                     work.endedOn = new Date();
@@ -245,12 +260,12 @@ class RainbowAgent {
 
             that.fireEvent(work, null).then((routedStep) => {
 
-                if(routedStep) {
+                if (routedStep) {
                     // force next step
                     work.forcedNextStep = routedStep;
                 }
 
-                if(work.waiting) {
+                if (work.waiting) {
                     that.delayer.delay(work);
                 } else {
                     that.queue.addToQueue(work);

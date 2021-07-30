@@ -82,6 +82,16 @@ class Queue {
                     that._logger.log("debug", LOG_ID + "executeWork() - Exit from state NEW");
                     resolve();
                     break;
+                case Work.STATE.JUMP:
+                    work.next();
+                    work.jump();
+                    work.executeStep();
+                    if (work.hasNoMoreStep()) {
+                        work.next();
+                    }
+                    that._logger.log("debug", LOG_ID + "executeWork() - Exit from state JUMP");
+                    resolve();
+                    break;
                 case Work.STATE.INPROGRESS:
                     work.move();
                     work.executeStep();

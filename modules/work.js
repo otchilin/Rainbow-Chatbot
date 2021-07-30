@@ -26,7 +26,7 @@ class Work {
         this._waiting = 0;             // When the work need to sleep
         this._external = false;         // Need to execute an external task
         this.log("info", LOG_ID + "constructor() - Work[" + this._id + "] (state) changed to '" + this._state + "'");
-        this._history = [];           // History of inputs 
+        this._history = [];           // History of inputs
     }
 
     get id() {
@@ -173,14 +173,14 @@ class Work {
 
     historize(msg) {
         let that = this;
-        
+
         this.log("info", LOG_ID + "historize() - Work[" + this._id + "] (history) added content '" + msg.value + "' for step '" + this._stepId + "'");
 
         let historyItem = this._history.find((item) => {
             return item.step === that._stepId;
         });
 
-        if(historyItem) {
+        if (historyItem) {
             historyItem.content = msg.value;
         }
     }
@@ -189,16 +189,15 @@ class Work {
 
         this.historizeStep(this._stepId);
 
-        if(this._stepId && this._scenario) {
+        if (this._stepId && this._scenario) {
             this.log("info", LOG_ID + "executeStep() - Work[" + this._id + "] is executing step " + this._stepId);
-            
+
             let step = this._scenario[this._stepId];
-            
-            if(step) {
+
+            if (step) {
                 this._factory.execute(this, step);
             }
-        }
-        else {
+        } else {
             this.log("warn", LOG_ID + "executeStep() - Work[" + this._id + "] has not stepId or scenario");
         }
     }
@@ -206,18 +205,25 @@ class Work {
     move() {
         let old_step = this._stepId;
         this._stepId = this.getNextStep();
-        if(!this._stepId) {
+        if (!this._stepId) {
             this.block();
         }
         this.log("info", LOG_ID + "move() - Work[" + this._id + "] (step) changed from '" + old_step + "' to '" + this._stepId + "'");
     }
 
+    jump() {
+        if (!this._stepId) {
+            this.block();
+        }
+        this.log("info", LOG_ID + "jump() - Work[" + this._id + "] (step) changed from to '" + this._stepId + "'");
+    }
+
     getFirstStep() {
-        if(!this._scenario || Object.keys(this._scenario).length === 0) {
+        if (!this._scenario || Object.keys(this._scenario).length === 0) {
             this.log("warn", LOG_ID + "movetoFirstStep() - Work[" + this._id + "] don't have any step defined");
             return null;
         }
-        return(Object.keys(this._scenario)[0]);
+        return (Object.keys(this._scenario)[0]);
     }
 
     getNextStep() {
@@ -226,16 +232,14 @@ class Work {
 
         this.log("info", LOG_ID + "getNextStep() - Enter");
 
-        if(this._stepId) {
-            if(this._forcedNextStepId) {
+        if (this._stepId) {
+            if (this._forcedNextStepId) {
                 nextStep = this._forcedNextStepId;
                 this._forcedNextStepId = null;
-            }
-            else {
+            } else {
                 nextStep = this._factory.findNextStep(this, this._stepId);
             }
-        }
-        else {
+        } else {
             nextStep = this.getFirstStep();
         }
 
@@ -245,29 +249,28 @@ class Work {
     }
 
     log(level, message, content) {
-        if(this._logger) {
+        if (this._logger) {
             this._logger.log(level, message);
         } else {
-            if(content) {
+            if (content) {
                 console.log(message, content);
-            }
-            else {
+            } else {
                 console.log(message);
             }
         }
     }
 
     hasNoMoreStep() {
-        
-        if(this.pending) {
+
+        if (this.pending) {
             this.log("info", LOG_ID + "hasNoMoreStep() - Work[" + this._id + "] need inputs for the current step " + this._stepId);
-            
+
             return false;
         }
 
         let nextStep = this.getNextStep();
 
-        if(nextStep && (nextStep in this._scenario)) {
+        if (nextStep && (nextStep in this._scenario)) {
             this.log("info", LOG_ID + "hasNoMoreStep() - Work[" + this._id + "] has a next step " + nextStep + " defined");
             return false;
         }
@@ -303,6 +306,7 @@ class Work {
 
         switch (this._state) {
             case Work.STATE.NEW:
+            case Work.STATE.JUMP:
                 this._state = Work.STATE.INPROGRESS;
                 hasChanged = true;
                 break;
@@ -316,22 +320,23 @@ class Work {
                 break;
             case Work.STATE.CLOSED:
             case Work.STATE.ABORTED:
-                this.log("warn", LOG_ID + "next() - work is already in a terminal state (" + this._state + ")");    
+                this.log("warn", LOG_ID + "next() - work is already in a terminal state (" + this._state + ")");
                 break;
             default:
-                this.log("warn", LOG_ID + "next() - unknown state " + this._state);    
+                this.log("warn", LOG_ID + "next() - unknown state " + this._state);
                 break;
         }
-        if(hasChanged) {
+        if (hasChanged) {
             this.log("info", LOG_ID + "next() - Work[" + this._id + "] (state) changed to '" + this._state + "'");
         }
     }
-} 
+}
 
 module.exports = Work;
 
 Work.STATE = {
     "NEW": "NEW",               // When the work is created
+    "JUMP": "JUMP",             // When user navigate inside scenario without passing by choice
     "INPROGRESS": "INPROGRESS", // When the scenario of the work is ongoing
     "TERMINATED": "TERMINATED", // When the scenario of the work is finished
     "CLOSED": "CLOSED",         // When the work is closed
