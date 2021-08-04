@@ -182,6 +182,7 @@ class Work {
 
         if (historyItem) {
             historyItem.content = msg.value;
+            if(msg.altContent) historyItem.altContent = msg.altContent;
         }
     }
 

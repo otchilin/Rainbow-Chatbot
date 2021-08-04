@@ -19,6 +19,7 @@
     "lodash": "^4.17.21",
     "moment": "^2.29.1",
     "rainbow-node-sdk": "^2.0.1-lts.2",
+    "safe-stable-stringify": "^1.1.1",
     "sanitize": "^2.1.0",
     "winston": "^3.2.1"
   },

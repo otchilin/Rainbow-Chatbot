@@ -61,91 +61,30 @@ class ChoicePlug {
         return next;
     }
 
-    execute(work, step, event, logger, adcHelper) {
+    execute(work, step, event, logger) {
         logger.log("info", LOG_ID + "execute() - Work[" + work.id + "] - choice");
 
-        // Manage Adaptive Card Template
-        if (step.adcTemplate && adcHelper.checkTemplate(step.adcTemplate)) {
+        event.emit("onSendMessage", {
+            message: step.value ? step.value : "",
+            jid: work.jid,
+            type: "choice"
+        });
 
-            let adcData = {
-                question: step.value ? step.value : "",
-                choices: []
-            };
+        let message = "";
+        let list = "";
 
-            for (let i = 0; i < step.list.length; i++) {
-                let choice = {};
-                choice.title = step.list[i];
-                choice.value = step.accept ? step.accept[i] : step.list[i];
+        step.list.forEach((choice) => {
+            message += "- " + choice + "\r\n";
+            list += list.length === 0 ? choice : ',' + choice;
+        });
 
-                if (adcData.choices.length === 0) {
-                    adcData.defaultValue = choice.value;
-                }
+        event.emit("onSendMessage", {
+            message: list,
+            extendedContent: message,
+            jid: work.jid,
+            type: "text/markdown"
+        });
 
-                adcData.choices.push(choice);
-            }
-
-            // Default title for submit button, can be overloaded by adcTemplateOptions
-            adcData.submitButton = "OK";
-
-            // Merge optional parameters to the data used for expansion
-            if (step.adcTemplateOptions) {
-                lodash.merge(adcData, step.adcTemplateOptions);
-            }
-
-
-            // Expand card with data
-            adcHelper.genCard(step.adcTemplate, adcData).then(card => {
-                if (card) {
-                    event.emit("onSendMessage", {
-                        message: step.value,
-                        extendedContent: {"adaptivecard": card, "extra": step.extraData ? step.extraData : null},
-                        jid: work.jid,
-                        type: "AdaptiveCard"
-                    });
-                }
-            }).catch(err => {
-                logger.log("error", LOG_ID + "execute() - Work[" + work.id + "] - choice / Error while expanding card content : " + err);
-            });
-
-
-        } else {
-            event.emit("onSendMessage", {
-                message: step.value ? step.value : "",
-                jid: work.jid,
-                type: "choice"
-            });
-
-            let message = "";
-            let list = "";
-            let extendedContent = {buttons: []};
-
-            step.list.forEach((choice) => {
-                message += "- " + choice + "\r\n";
-                list += list.length === 0 ? choice : ',' + choice;
-            });
-
-
-            // FB templating
-            /*
-            step.accept.forEach((choice) => {
-                extendedContent.buttons.push({
-                    content_type: 'text',
-                    'title': choice,
-                    'payload': choice
-                });
-            });
-
-             */
-
-            extendedContent.messageMarkdown = message;
-
-            event.emit("onSendMessage", {
-                message: list,
-                extendedContent: extendedContent,
-                jid: work.jid,
-                type: "list"
-            });
-        }
 
         work.pending = true;
         work.waiting = step.waiting ? step.waiting : 0;

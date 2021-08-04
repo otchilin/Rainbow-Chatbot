@@ -41,9 +41,9 @@ class Factory {
         }
     }
 
-    isValid(work, step, content) {
+    isValid(work, step, content, altContent) {
         if (step.type in this._action) {
-            return this._action[step.type].isValid(work, step, content, this._event, this._logger);
+            return this._action[step.type].isValid(work, step, content, this._event, this._logger, altContent);
         }
 
 

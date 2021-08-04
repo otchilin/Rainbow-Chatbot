@@ -169,20 +169,10 @@ class RainbowAgent {
                     return;
                 }
 
-                // todo : move this code in other lib
-                // Process alternative content from msg if available
-
-                const stepDetails = work.scenario[work.step];
-                // process alternative content
-                // Overload the msg value with step corresponding answer
-                if (msg.altContent && (stepDetails.type + '-answer' in msg.altContent)) {
-                    msg.value = msg.altContent[stepDetails.type + '-answer'];
-                }
-
                 // Store message if scenario is inProgress
                 if (work.state === Work.STATE.INPROGRESS) {
 
-                    if (!this.factory.isValid(work, work.scenario[work.step], msg.value)) {
+                    if (!this.factory.isValid(work, work.scenario[work.step], msg.value, msg.altContent)) {
                         return;
                     }
                     work.historize(msg);

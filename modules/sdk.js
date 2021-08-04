@@ -2,6 +2,7 @@
 
 const LOG_ID = "SDK - ";
 
+const serialize = require('safe-stable-stringify');
 const Message = require('./message');
 
 class SDK {
@@ -68,14 +69,7 @@ class SDK {
 
     listenToOutgoingMessage() {
         this._event.on("onSendMessage", (json) => {
-            let content = {};
-            if (json.messageMarkdown) {
-                content.messageMarkdown = json.messageMarkdown;
-            }
-            if (json.extendedContent) {
-                content.extendedContent = json.extendedContent;
-            }
-            this.sendAMessage(json.message, json.jid, json.type, content);
+            this.sendAMessage(json.message, json.jid, json.type, json.extendedContent);
         });
     }
 
@@ -127,30 +121,37 @@ class SDK {
 
         let extContent = null;
 
-        try {
-            if (content) {
-                /**
-                 * If object contains extendedContent parameter we consider it as json
-                 * extended format and encode it.
-                 * Else we consider it as a simple Markdown format
-                 */
-                if (content.extendedContent) {
-                    extContent = {
-                        "type": "application/json",
-                        "message": JSON.stringify(content.extendedContent)
+        /**
+         * Process alternative content
+         */
+        if (content) {
+
+            switch (type) {
+                case "form/json":
+                case "application/json":
+
+                    if (typeof (content) !== "string") {
+                        content = serialize.default(content);
                     }
-                } else if (content.messageMarkdown) {
-                    extContent = {
-                        "type": "text/markdown",
-                        "message": content.messageMarkdown
+
+                    break;
+                case "text/markdown":
+                    if (typeof (content) !== "string") {
+
+                        this._logger.log("error", LOG_ID + "sendAMessage() - Message content is not MD format");
+                        return;
                     }
-                }
+                    break;
+                default:
             }
-        } catch (e) {
-            this._logger.log("error", LOG_ID + "sendAMessage() - Error while preparing message to send : " + e.message);
+
+            extContent = {
+                type: type,
+                message: content
+            };
         }
 
-        this._nodeSDK.im.sendMessageToJid(message, jid, "en", extContent, type);
+        this._nodeSDK.im.sendMessageToJid(message, jid, "en", extContent);
     }
 }
 
