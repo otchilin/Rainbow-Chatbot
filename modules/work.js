@@ -6,7 +6,6 @@ const CircularJSON = require('circular-json');
 const LOG_ID = "WORK - ";
 
 class Work {
-
     constructor(event, logger, factory) {
         this._event = event;
         this._logger = logger;
@@ -25,8 +24,21 @@ class Work {
         this._scenario = null;          // Scenario
         this._waiting = 0;             // When the work need to sleep
         this._external = false;         // Need to execute an external task
+
+        this._history = [];               // History of inputs
+        this._lastChange = this._created; // Used to verify is task is still active or need to be aborted
         this.log("info", LOG_ID + "constructor() - Work[" + this._id + "] (state) changed to '" + this._state + "'");
-        this._history = [];           // History of inputs
+
+
+    }
+
+
+    updateLastChange() {
+        this._lastChange = new Date();
+    }
+
+    get lastChange(){
+        return this._lastChange;
     }
 
     get id() {
@@ -89,7 +101,7 @@ class Work {
         return this._state === Work.STATE.TERMINATED;
     }
 
-    get step() {
+    get stepId() {
         return this._stepId;
     }
 
@@ -109,7 +121,7 @@ class Work {
         return this._history;
     }
 
-    set step(stepId) {
+    set stepId(stepId) {
         this._stepId = stepId;
         this.log("info", LOG_ID + "step() - Work[" + this._id + "] (step) changed to '" + this._stepId + "'");
     }
@@ -182,11 +194,13 @@ class Work {
 
         if (historyItem) {
             historyItem.content = msg.value;
-            if(msg.altContent) historyItem.altContent = msg.altContent;
+            if (msg.altContent) historyItem.altContent = msg.altContent;
         }
     }
 
     executeStep() {
+
+        this.updateLastChange();
 
         this.historizeStep(this._stepId);
 
@@ -213,10 +227,11 @@ class Work {
     }
 
     jump() {
+        this._stepId = this.getNextStep();
         if (!this._stepId) {
             this.block();
         }
-        this.log("info", LOG_ID + "jump() - Work[" + this._id + "] (step) changed from to '" + this._stepId + "'");
+        this.log("info", LOG_ID + "jump() - Work[" + this._id + "] (step) changed to '" + this._stepId + "'");
     }
 
     getFirstStep() {
@@ -233,6 +248,18 @@ class Work {
 
         this.log("info", LOG_ID + "getNextStep() - Enter");
 
+
+        if (this._forcedNextStepId) {
+            nextStep = this._forcedNextStepId;
+            this._forcedNextStepId = null;
+        } else {
+            if (this._stepId) {
+                nextStep = this._factory.findNextStep(this, this._stepId);
+            }else{
+                nextStep = this.getFirstStep();
+            }
+        }
+        /*
         if (this._stepId) {
             if (this._forcedNextStepId) {
                 nextStep = this._forcedNextStepId;
@@ -241,8 +268,15 @@ class Work {
                 nextStep = this._factory.findNextStep(this, this._stepId);
             }
         } else {
-            nextStep = this.getFirstStep();
+            if (this._forcedNextStepId) {
+                nextStep = this._forcedNextStepId;
+                this._forcedNextStepId = null;
+            } else {
+                nextStep = this.getFirstStep();
+            }
         }
+
+         */
 
         this.log("info", LOG_ID + "getNextStep() - Work[" + this._id + "] found next step " + nextStep);
 
@@ -292,6 +326,13 @@ class Work {
         this.log("warn", LOG_ID + "abort() - Work[" + this._id + "] (state) changed to '" + this._state + "'");
     }
 
+    timeout() {
+        this._state = Work.STATE.TIMEOUT;
+        this._pending = false;
+        this._waiting = 0;
+        this.log("warn", LOG_ID + "timeout() - Work[" + this._id + "] (state) changed to '" + this._state + "'");
+    }
+
     terminate() {
         this._state = Work.STATE.TERMINATED;
         this.log("warn", LOG_ID + "terminate() - Work[" + this._id + "] (state) changed to '" + this._state + "'");
@@ -307,8 +348,15 @@ class Work {
 
         switch (this._state) {
             case Work.STATE.NEW:
-            case Work.STATE.JUMP:
                 this._state = Work.STATE.INPROGRESS;
+                hasChanged = true;
+                break;
+            case Work.STATE.JUMP:
+                if (this.hasNoMoreStep()) {
+                    this._state = Work.STATE.TERMINATED;
+                } else {
+                    this._state = Work.STATE.INPROGRESS;
+                }
                 hasChanged = true;
                 break;
             case Work.STATE.INPROGRESS:
@@ -319,6 +367,7 @@ class Work {
                 this._state = Work.STATE.CLOSED;
                 hasChanged = true;
                 break;
+            case Work.STATE.TIMEOUT:
             case Work.STATE.CLOSED:
             case Work.STATE.ABORTED:
                 this.log("warn", LOG_ID + "next() - work is already in a terminal state (" + this._state + ")");
@@ -342,7 +391,9 @@ Work.STATE = {
     "TERMINATED": "TERMINATED", // When the scenario of the work is finished
     "CLOSED": "CLOSED",         // When the work is closed
     "ABORTED": "ABORTED",       // When the work is aborted (user is starting a new one)
-    "BLOCKED": "BLOCKED"        // When the work is blocked due to an issue (no step)
+    "BLOCKED": "BLOCKED",       // When the work is blocked due to an issue (no step)
+    "TIMEOUT":"TIMEOUT"         // When scenario has timed out generally because remote user has abndonned session
+                                // or was too long ton answer
 };
 
 Work.QUEUE = {

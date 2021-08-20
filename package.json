@@ -11,6 +11,7 @@
   "author": "AL-Enterprise <support@openrainbow.com>",
   "license": "MIT",
   "dependencies": {
+    "async": "^3.2.1",
     "adaptivecards-templating": "^2.1.0",
     "circular-json": "^0.5.9",
     "comment-json": "^4.1.1",
@@ -21,10 +22,10 @@
     "rainbow-node-sdk": "^2.0.1-lts.2",
     "safe-stable-stringify": "^1.1.1",
     "sanitize": "^2.1.0",
-    "winston": "^3.2.1"
+    "winston": "^3.3.3",
+    "prom-client": "^13.2.0"
   },
   "devDependencies": {
-    "async": "^3.1.0",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "chai-spies": "^1.0.0",

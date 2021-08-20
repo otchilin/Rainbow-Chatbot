@@ -20,7 +20,7 @@ class ChoicePlug {
 
             if (work.history) {
                 let historyItem = work.history.find((item) => {
-                    return item.step === work.step;
+                    return item.step === work.stepId;
                 });
 
                 if (historyItem) {

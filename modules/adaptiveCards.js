@@ -21,7 +21,6 @@ class ACDHelper {
 
         if (templatesPath !== "") {
             let tmpls = await this.loadTemplates();
-            console.log(tmpls);
         } else {
             throw ("ADC templates path is empty !");
         }

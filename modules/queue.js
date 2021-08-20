@@ -2,6 +2,7 @@
 
 const async = require("async");
 const Work = require("./work");
+const promClient = require("prom-client");
 
 const LOG_ID = "QUEUE - ";
 
@@ -13,6 +14,20 @@ class Queue {
         this._logger = null;
         this._queue = null;
         this._options = null;
+        this._timeout = {};
+
+        this._queueLoopCount = new promClient.Counter({
+            name: 'bot_queue_loop_total',
+            help: 'Total number of time the queue worker has been called',
+        });
+    }
+
+
+    removeTimeout(work) {
+        if (this._timeout[work.id]) {
+            clearTimeout(this._timeout[work.id]);
+            delete this._timeout[work.id];
+        }
     }
 
     start(event, logger, options) {
@@ -37,21 +52,21 @@ class Queue {
         this._logger.log("debug", LOG_ID + "createQueue() - Enter");
 
         this._queue = async.queue(function (work, callback) {
-            that._logger.log("info", LOG_ID + "createQueue() - Executing next work");
+            that._logger.log("info", LOG_ID + "Queue worker - Executing next work");
             that.executeWork(work).then(() => {
                 callback(null);
             }).catch((err) => {
-                that._logger.log("error", LOG_ID + "createQueue() - Error", err);
+                that._logger.log("error", LOG_ID + "Queue worker  - Error", err);
                 callback(err);
             });
         }, (this._options && this._options.queue && this._options.queue.concurrency) ? this._options.queue.concurrency : 1);
 
         this._queue.drain(() => {
-            that._logger.log('debug', LOG_ID + "createQueue() - all works have been processed");
+            that._logger.log('debug', LOG_ID + "Queue worker - all works have been processed");
         });
 
         this._queue.error(function (err, work) {
-            that._logger.log("error", LOG_ID + "createQueue() - work " + work.id + "experienced an error: ", err);
+            that._logger.log("error", LOG_ID + "Queue worker - work " + work.id + "experienced an error: ", err);
         });
 
         this._logger.log("debug", LOG_ID + "createQueue() - Exit");
@@ -60,12 +75,19 @@ class Queue {
     rejectExpiredWork(work, timeout) {
         return (() => {
             return new Promise((resolve, reject) => {
-                setTimeout(() => reject(`the Work ${work.id} took too much time, it was cancelled`), timeout * 1000);
+                this._timeout[work.id] = setTimeout(() => {
+                    this._logger.log("debug", LOG_ID + "rejectExpiredWork() - OLIVIER DEBUG -> word ID = " + work.id);
+                    reject(`the Work ${work.id} took too much time, it was cancelled`);
+                }, timeout * 1000);
+
+
             })
         })();
     }
 
     executeWork(work) {
+
+        this._queueLoopCount.inc();
 
         let that = this;
 
@@ -83,16 +105,14 @@ class Queue {
                     resolve();
                     break;
                 case Work.STATE.JUMP:
-                    work.next();
                     work.jump();
                     work.executeStep();
-                    if (work.hasNoMoreStep()) {
-                        work.next();
-                    }
+                    work.next();
                     that._logger.log("debug", LOG_ID + "executeWork() - Exit from state JUMP");
                     resolve();
                     break;
                 case Work.STATE.INPROGRESS:
+
                     work.move();
                     work.executeStep();
                     if (work.hasNoMoreStep()) {
@@ -101,6 +121,7 @@ class Queue {
                     that._logger.log("debug", LOG_ID + "executeWork() - Exit");
                     resolve();
                     break;
+                case Work.STATE.TIMEOUT:
                 case Work.STATE.TERMINATED:
                     work.next();
                     that._logger.log("debug", LOG_ID + "executeWork() - Exit");
@@ -137,8 +158,13 @@ class Queue {
                 this._logger.log("error", LOG_ID + "addToQueue() - Error processing " + work.jid);
                 this._logger.log('error', LOG_ID + "addToQueue() - err:" + err);
                 work.abort();
+                this._event.emit("ontaskfinished", work);
                 return;
             }
+
+            // Clear timeout watchdog
+            this.removeTimeout(work);
+
             this._logger.log("info", LOG_ID + "addToQueue() - Finished work for " + work.jid);
 
             work.queued = false;

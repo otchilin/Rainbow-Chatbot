@@ -13,6 +13,7 @@ const Delayer = require("./modules/delayer");
 const Factory = require("./modules/plugins/factory");
 
 const adcHelper = require("./modules/adaptiveCards.js");
+const promClient = require("prom-client");
 
 const LOG_ID = "CHATBOT - ";
 
@@ -39,7 +40,7 @@ class RainbowAgent {
         this.queue = new Queue();
         this.tags = new Tags(tags);
         this.sdk = new NodeSDK(nodeSDK);
-        this.works = new Works(this.sdk);
+        this.works = new Works(this.sdk, options.worktimeout);
         this.delayer = new Delayer();
         this.factory = new Factory();
 
@@ -54,6 +55,8 @@ class RainbowAgent {
         this._contextTicket = null;
 
         this._isEnabled = true;
+
+        this._promRegistry = promClient.register;
 
         return this;
     }
@@ -132,7 +135,7 @@ class RainbowAgent {
 
                 let content = message ? message.value : "";
 
-                return that._callbackMessage.call(that._contextMessage, work.tag, work.step, content, work.from, resolve);
+                return that._callbackMessage.call(that._contextMessage, work.tag, work.stepId, content, work.from, resolve);
             }
 
         });
@@ -172,7 +175,7 @@ class RainbowAgent {
                 // Store message if scenario is inProgress
                 if (work.state === Work.STATE.INPROGRESS) {
 
-                    if (!this.factory.isValid(work, work.scenario[work.step], msg.value, msg.altContent)) {
+                    if (!this.factory.isValid(work, work.scenario[work.stepId], msg.value, msg.altContent)) {
                         return;
                     }
                     work.historize(msg);
@@ -202,6 +205,7 @@ class RainbowAgent {
             if (work.state !== Work.STATE.CLOSED &&
                 work.state !== Work.STATE.BLOCKED &&
                 work.state !== Work.STATE.ABORTED &&
+                work.state !== Work.STATE.TIMEOUT &&
                 !work.pending) {
 
                 if (that._isEnabled) {
@@ -242,6 +246,9 @@ class RainbowAgent {
                     work.endedOn = new Date();
 
                     that.fireTicketEvent(work);
+
+                    // Work is completely finished, we can remove this job from "works" array
+                    that.works.removeWork(work);
                 }
             }
         });
