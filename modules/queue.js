@@ -17,12 +17,22 @@ class Queue {
         this._timeout = {};
 
         this._queueLoopCount = new promClient.Counter({
-            name: 'bot_queue_loop_total',
+            name: 'botsdk_queue_loop_total',
             help: 'Total number of time the queue worker has been called',
         });
+
+        this._queueLengthGauge = new promClient.Gauge({
+            name: 'botsdk_queue_length',
+            help: 'Current scenario queue size'
+        });
+
     }
 
 
+    /**
+     * Clear the timeout handle for corresponding work
+     * @param work
+     */
     removeTimeout(work) {
         if (this._timeout[work.id]) {
             clearTimeout(this._timeout[work.id]);
@@ -76,7 +86,7 @@ class Queue {
         return (() => {
             return new Promise((resolve, reject) => {
                 this._timeout[work.id] = setTimeout(() => {
-                    this._logger.log("debug", LOG_ID + "rejectExpiredWork() - OLIVIER DEBUG -> word ID = " + work.id);
+                    this._logger.log("debug", LOG_ID + "rejectExpiredWork() - work ID = " + work.id);
                     reject(`the Work ${work.id} took too much time, it was cancelled`);
                 }, timeout * 1000);
 
@@ -154,10 +164,13 @@ class Queue {
         work.queue = true;
 
         this._queue.push(work, (err) => {
+
+            this._queueLengthGauge.set(this._queue.length());
+
             if (err) {
                 this._logger.log("error", LOG_ID + "addToQueue() - Error processing " + work.jid);
                 this._logger.log('error', LOG_ID + "addToQueue() - err:" + err);
-                work.abort();
+                work.timeout();
                 this._event.emit("ontaskfinished", work);
                 return;
             }
@@ -173,6 +186,7 @@ class Queue {
 
         });
 
+        this._queueLengthGauge.set(this._queue.length());
         this._logger.log("debug", LOG_ID + "addToQueue() - Exit");
     }
 }

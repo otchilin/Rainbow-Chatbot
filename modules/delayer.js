@@ -1,6 +1,7 @@
 "use strict";
 
 const LOG_ID = "DELAYER - ";
+const promClient = require("prom-client");
 
 class Delayer {
 
@@ -8,13 +9,18 @@ class Delayer {
         this._event = null;
         this._logger = null;
         this._workDelayed = {};
+
+        this._workDelayedGauge = new promClient.Gauge({
+            name: 'botsdk_work_delayed_length',
+            help: 'Current number of work waiting in delayed mode'
+        });
     }
 
     start(event, logger) {
         this._event = event;
         this._logger = logger;
 
-        return new Promise(function(resolve) {
+        return new Promise(function (resolve) {
             resolve();
         });
     }
@@ -24,7 +30,7 @@ class Delayer {
     }
 
     log(level, message, content) {
-        if(this._logger) {
+        if (this._logger) {
             this._logger.log(level, message);
         } else {
             console.log(message, content);
@@ -36,6 +42,7 @@ class Delayer {
         work.waiting = 0;
         this._workDelayed[work.id] = null;
         delete this._workDelayed[work.id];
+        this._workDelayedGauge.set(Object.keys(this._workDelayed).length);
         this._event.emit("ontaskfinished", work);
     }
 
@@ -46,8 +53,9 @@ class Delayer {
 
         this._workDelayed[work.id] = work;
 
+        this._workDelayedGauge.set(Object.keys(this._workDelayed).length);
         setTimeout(() => {
-            that.delayed(work);            
+            that.delayed(work);
         }, work.waiting);
     }
 }

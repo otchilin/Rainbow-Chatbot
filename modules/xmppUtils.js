@@ -1,6 +1,6 @@
 "use strict";
 
-const uuid4 = require("uuid4");
+const {v4: uuidv4} = require('uuid');
 
 class XMPPUTils {
 
@@ -8,7 +8,7 @@ class XMPPUTils {
         this.messageId = 0;
     }
 
-    generateRandomID() { 
+    generateRandomID() {
         var text = "";
         var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
@@ -20,31 +20,31 @@ class XMPPUTils {
 
     getUniqueMessageId() {
 
-        var randomBase = uuid4();
+        var randomBase = uuidv4();
 
         var messageToSendID = "node_" + randomBase + this.messageId;
         this.messageId++;
         return messageToSendID;
     }
 
-    generateRandomFullJidForNode(jid) { 
+    generateRandomFullJidForNode(jid) {
         var fullJid = jid + "/node_" + this.generateRandomID();
         return fullJid;
     }
 
     getBareJIDFromFullJID(fullJid) {
         var index = 0;
-        
+
         if (fullJid.indexOf("tel_") === 0) {
             index = 4;
         }
-        
+
         return fullJid.substring(index, fullJid.indexOf("/"));
     }
 
     getUsernameFromJid(jid) {
         var index = 0;
-        
+
         if (jid.indexOf("tel_") === 0) {
             index = 4;
         }

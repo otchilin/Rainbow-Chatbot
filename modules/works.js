@@ -10,7 +10,6 @@ const LOG_ID = "WORKS - ";
 class Works {
 
     /**
-     *
      * @param nodeSDK
      * @param timeout max idle time in sec for a scenario
      */
@@ -25,6 +24,11 @@ class Works {
         this._counter_processed_works_total = new promClient.Counter({
             name: 'botsdk_processed_scenario_total',
             help: 'Total number of scenario processed',
+        });
+
+        this._gauge_scenarios = new promClient.Gauge({
+            name: 'botsdk_processing_scenarios',
+            help: 'Total number of currently running scenarios/conversation'
         });
 
         this._counter_error_works_total = new promClient.Counter({
@@ -74,6 +78,7 @@ class Works {
     addWork(work) {
         this._counter_processed_works_total.inc();
         this._works.push(work);
+        this._gauge_scenarios.set(this._works.length);
         this.log("debug", LOG_ID + "addWork() - number of work(s) " + this._works.length);
     }
 
@@ -141,7 +146,12 @@ class Works {
                             this.log("info", LOG_ID + "getWork() - Jumping to step " + work.stepId
                                 + " work " + work.id + " | " + work.tag);
                         }
-
+                    } else {
+                        // We simply restart scenario
+                        work.forcedNextStep = work.getFirstStep();
+                        work._state = Work.STATE.JUMP;
+                        this.log("info", LOG_ID + "getWork() - Restarting scenario / work "
+                            + work.id + " | " + work.tag);
                     }
                     return work;
 
@@ -176,6 +186,7 @@ class Works {
             return o.jid === work.jid && o.tag === work.tag && o.from === work.from;
         });
         if (removed.length) {
+            this._gauge_scenarios.set(this._works.length);
             this.log("info", LOG_ID + "removeWork() - Removed Work[" + work.id + "] (state) '" + work.state + "'");
         } else {
             this.log("error", LOG_ID + "removeWork() - Work[" + work.id + "] (state) '" + work.state + "' not found !");

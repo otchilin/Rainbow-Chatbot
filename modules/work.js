@@ -259,24 +259,6 @@ class Work {
                 nextStep = this.getFirstStep();
             }
         }
-        /*
-        if (this._stepId) {
-            if (this._forcedNextStepId) {
-                nextStep = this._forcedNextStepId;
-                this._forcedNextStepId = null;
-            } else {
-                nextStep = this._factory.findNextStep(this, this._stepId);
-            }
-        } else {
-            if (this._forcedNextStepId) {
-                nextStep = this._forcedNextStepId;
-                this._forcedNextStepId = null;
-            } else {
-                nextStep = this.getFirstStep();
-            }
-        }
-
-         */
 
         this.log("info", LOG_ID + "getNextStep() - Work[" + this._id + "] found next step " + nextStep);
 

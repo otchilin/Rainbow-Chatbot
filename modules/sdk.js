@@ -4,6 +4,7 @@ const LOG_ID = "SDK - ";
 
 const serialize = require('safe-stable-stringify');
 const Message = require('./message');
+const promClient = require('prom-client');
 
 class SDK {
 
@@ -12,6 +13,15 @@ class SDK {
         this._event = null;
         this._logger = null;
         this._usersCache = {};
+
+        this._messageSentCounter = new promClient.Gauge({
+            name: 'botsdk_message_sent_total',
+            help: 'Total number of message sent by the bot'
+        });
+        this._messageReceivedCounter = new promClient.Gauge({
+            name: 'botsdk_message_received_total',
+            help: 'Total number of message received by the bot'
+        });
     }
 
     start(event, logger) {
@@ -38,6 +48,7 @@ class SDK {
 
             // Do not deal with messages sent by the bot or the bot identity connected in web, mobile...
             if (!message.cc) {
+                this._messageReceivedCounter.inc();
                 this._nodeSDK.im.markMessageAsRead(message);
 
                 this.getContact(message.fromJid).then(contact => {
@@ -152,6 +163,7 @@ class SDK {
         }
 
         this._nodeSDK.im.sendMessageToJid(message, jid, "en", extContent);
+        this._messageSentCounter.inc();
     }
 }
 
