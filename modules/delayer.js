@@ -10,10 +10,11 @@ class Delayer {
         this._logger = null;
         this._workDelayed = {};
 
-        this._workDelayedGauge = new promClient.Gauge({
-            name: 'botsdk_work_delayed_length',
-            help: 'Current number of work waiting in delayed mode'
-        });
+        this._workDelayedGauge = promClient.register.getSingleMetric('botsdk_work_delayed_length') ||
+            new promClient.Gauge({
+                name: 'botsdk_work_delayed_length',
+                help: 'Current number of work waiting in delayed mode'
+            });
     }
 
     start(event, logger) {

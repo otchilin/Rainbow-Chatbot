@@ -7,48 +7,57 @@ let chaiAsPromised = require("chai-as-promised");
 chai.use(spies);
 chai.use(chaiAsPromised);
 
-describe('hashtag recognition', function() {
-    it('should find nothing in an null text', function() {
+describe('hashtag recognition', function () {
+    it('should find nothing in an null text', function () {
         expect(getHashTags(null)).to.eqls([]);
     });
 
-    it('should find nothing in an undefined text', function() {
+    it('should find nothing in an undefined text', function () {
         expect(getHashTags()).to.eqls([]);
     });
 
-    it('should find nothing in an empty text', function() {
+    it('should find nothing in an empty text', function () {
         expect(getHashTags("")).to.eqls([]);
     });
 
-    it('should find nothing when there is no tag', function() {
+    it('should find nothing when there is no tag', function () {
         expect(getHashTags("there is no tag")).to.eqls([]);
     });
 
-    it('should find a simple tag', function() {
-        expect(getHashTags("#atag")).to.eqls(["atag"]);
+    it('should find a simple tag', function () {
+        expect(getHashTags("#atag")).to.eqls([["atag"]]);
     });
 
-    it('should find a tag with having a "_" character', function() {
-        expect(getHashTags("#a_tag")).to.eqls(["a_tag"]);
+    it('should find a tag with having a "_" character', function () {
+        expect(getHashTags("#a_tag")).to.eqls([["a_tag"]]);
     });
 
-    it('should not find a tag containing only the "_" character', function() {
+    it("should find a tag with it's parameter a '_' character", function () {
+        expect(getHashTags("#a_tag/param1")).to.eqls([["a_tag", "param1"]]);
+    });
+
+    it('should not find a tag containing only the "_" character', function () {
         expect(getHashTags("This should not be a good tag #___")).to.eqls([]);
     });
 
-    it('should not find a tag containing only the "-" character', function() {
+    it('should not find a tag containing only the "-" character', function () {
         expect(getHashTags("This should not be a good tag #---")).to.eqls([]);
     });
 
-    it('should not find a tag containing only numerical characters', function() {
+    it('should not find a tag containing only numerical characters', function () {
         expect(getHashTags("This should not be a good tag #123")).to.eqls([]);
     });
 
-    it('should find a tag with having a "-" character', function() {
-        expect(getHashTags("#a-tag")).to.eqls(["a-tag"]);
+    it('should find a tag with having a "-" character', function () {
+        expect(getHashTags("#a-tag")).to.eqls([["a-tag"]]);
     });
 
-    it('should find several tags', function() {
-        expect(getHashTags("#a-tag and a second #tag")).to.eqls(["a-tag", "tag"]);
+    it('should find several tags', function () {
+        expect(getHashTags("#a-tag and a second #tag")).to.eqls([["a-tag"], ["tag"]]);
+    });
+
+    it('should find several tags with parameters', function () {
+        expect(getHashTags("#a-tag/param1 and a second #tag/param2")).to.eqls([["a-tag", "param1"],
+            ["tag", "param2"]]);
     });
 });

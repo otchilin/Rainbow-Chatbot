@@ -21,20 +21,28 @@ class Works {
         this._works = [];
         this._timeoutLimit = timeout * 1000; // In ms
 
-        this._counter_processed_works_total = new promClient.Counter({
-            name: 'botsdk_processed_scenario_total',
-            help: 'Total number of scenario processed',
-        });
+        this._counter_processed_works_total = promClient.register.getSingleMetric('botsdk_processed_scenario_total');
 
-        this._gauge_scenarios = new promClient.Gauge({
-            name: 'botsdk_processing_scenarios',
-            help: 'Total number of currently running scenarios/conversation'
-        });
+        if (this._counter_processed_works_total) {
+            this._gauge_scenarios = promClient.register.getSingleMetric('botsdk_processing_scenarios');
+            this._counter_error_works_total = promClient.register.getSingleMetric('botsdk_scenario_end_error_total');
+        } else {
+            this._counter_processed_works_total = new promClient.Counter({
+                name: 'botsdk_processed_scenario_total',
+                help: 'Total number of scenario processed',
+            });
 
-        this._counter_error_works_total = new promClient.Counter({
-            name: 'botsdk_scenario_end_error_total',
-            help: 'Total number of scenario which ended in error state (abort, timeout, etc)',
-        });
+            this._gauge_scenarios = new promClient.Gauge({
+                name: 'botsdk_processing_scenarios',
+                help: 'Total number of currently running scenarios/conversation'
+            });
+
+            this._counter_error_works_total = new promClient.Counter({
+                name: 'botsdk_scenario_end_error_total',
+                help: 'Total number of scenario which ended in error state (abort, timeout, etc)',
+            });
+        }
+
 
         this._watchDogH = setInterval(this.workWatchDog, this._timeoutLimit, this);
     }

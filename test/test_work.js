@@ -63,14 +63,14 @@ describe('Work constructor', function() {
 
     it('should not have a current step id when created', function() {
         let work = new Work();
-        expect(work.step).is.a('null');
+        expect(work.stepId).is.a('null');
     });
 
     it('should not have a next step id when created', function() {
         let work = new Work();
         expect(work.forcedNextStep).is.a('null');
     });
-    
+
     it('should not have a from user when created', function() {
         let work = new Work();
         expect(work.from).is.a('null');
@@ -125,8 +125,8 @@ describe('Work setter and getter', function() {
 
     it('should set the right step', function() {
         let work = new Work();
-        work.step = "12345";
-        expect(work.step).is.equal("12345");
+        work.stepId = "12345";
+        expect(work.stepId).is.equal("12345");
     });
 
     it('should set the next step', function() {
@@ -188,10 +188,10 @@ describe('Move scenario', function() {
     it('should go to the first step when there is no step defined', function() {
         let factory = new Factory();
         let work = new Work(null, null, factory);
-        
+
         work.scenario = {"stepOne":{"type": "message"}};
         work.move();
-        expect(work.step).is.equal("stepOne");
+        expect(work.stepId).is.equal("stepOne");
     });
 
     it('should go to the first step and prepare the next step when exists', function() {
@@ -199,7 +199,7 @@ describe('Move scenario', function() {
         let work = new Work(null, null, factory);
         work.scenario = {"stepOne":{"next": "stepTwo", "type": "message"}};
         work.move();
-        expect(work.step).is.equal("stepOne");
+        expect(work.stepId).is.equal("stepOne");
     });
 
     it('should block the work if there is no step defined', function() {
@@ -207,7 +207,7 @@ describe('Move scenario', function() {
         let work = new Work(null, null, factory);
         work.scenario = {};
         work.move();
-        expect(work.step).is.a('null');
+        expect(work.stepId).is.a('null');
         expect(work.state).is.equal(Work.STATE.BLOCKED);
     });
 
@@ -215,32 +215,32 @@ describe('Move scenario', function() {
         let factory = new Factory();
         let work = new Work(null, null, factory);
         work.scenario = {"stepOne":{"next": "stepTwo", "type": "message"}, "stepTwo": {"next": null}};
-        work.step = "stepOne";
+        work.stepId = "stepOne";
         work.move();
-        expect(work.step).is.equal("stepTwo");
+        expect(work.stepId).is.equal("stepTwo");
     });
 
     it('should move to the next step that is a terminal step not defined', function() {
         let factory = new Factory();
         let work = new Work(null, null, factory);
         work.scenario = {"stepOne":{"next": "stepTwo", "type": "message"}, "stepTwo": {}};
-        work.step = "stepOne";
+        work.stepId = "stepOne";
         work.move();
-        expect(work.step).is.equal("stepTwo");
+        expect(work.stepId).is.equal("stepTwo");
     });
-    
+
     it('should move to the next step that is not a terminal step', function() {
         let factory = new Factory();
         let work = new Work(null, null, factory);
         work.scenario = {"stepFour":{"next": "stepFive", "type": "message"}, "stepFive": {"next": "stepSix", "type": "message"}};
-        work.step = "stepFour";
+        work.stepId = "stepFour";
         work.move();
-        expect(work.step).is.equal("stepFive");
+        expect(work.stepId).is.equal("stepFive");
     });
 });
 
 describe('Next state', function() {
-    
+
     it("should move from state NEW to state INPROGRESS", function() {
         let work = new Work();
         work.next();
@@ -284,7 +284,7 @@ describe('Next state', function() {
 });
 
 describe('check if the scenario is finished', function() {
-    
+
     it("return true for an uninitialized work", function() {
         let work = new Work();
         expect(work.hasNoMoreStep()).is.equal(true);
@@ -293,7 +293,7 @@ describe('check if the scenario is finished', function() {
     it("return true when there is no more step", function() {
         let factory = new Factory();
         let work = new Work(null, null, factory);
-        work.step = "stepTwo";
+        work.stepId = "stepTwo";
         work.scenario = {"stepOne":{"next": "stepTwo", "type": "message"}, "stepTwo":{"type": "message"}};
         expect(work.hasNoMoreStep()).is.equal(true);
     });
@@ -301,14 +301,14 @@ describe('check if the scenario is finished', function() {
     it("return false when there is a new step", function() {
         let factory = new Factory();
         let work = new Work(null, null, factory);
-        work.step = "stepOne";
+        work.stepId = "stepOne";
         work.scenario = {"stepOne":{"next": "stepTwo", "type": "message"}, "stepTwo":{}};
         expect(work.hasNoMoreStep()).is.equal(false);
     });
 
     it("return false when there is a pending step", function() {
         let work = new Work();
-        work.step = "stepOne";
+        work.stepId = "stepOne";
         work.pending = true;
         expect(work.hasNoMoreStep()).is.equal(false);
     });
@@ -326,7 +326,7 @@ describe ('check that execute function is well done', function() {
     it('should execute a step of type message', function() {
         let factory = {execute: chai.spy('execute')};
         let work = new Work(null, null, factory);
-        work.step = "stepOne";
+        work.stepId = "stepOne";
         work.scenario = {"stepOne":{"next": "stepTwo", "type": "message"}};
 
         work.executeStep();
@@ -336,7 +336,7 @@ describe ('check that execute function is well done', function() {
     it('should execute a step of type choice', function() {
         let factory = {execute: chai.spy('execute')};
         let work = new Work(null, null, factory);
-        work.step = "stepOne";
+        work.stepId = "stepOne";
         work.scenario = {"stepOne":{"next": "stepTwo", "type": "choice", "list": ["one", "two"]}};
 
         work.executeStep();
@@ -346,7 +346,7 @@ describe ('check that execute function is well done', function() {
     it('should execute a step of type command that is not pending', function() {
         let factory = {execute: chai.spy('execute')};
         let work = new Work(null, null, factory);
-        work.step = "stepOne";
+        work.stepId = "stepOne";
         work.scenario = {"stepOne":{"next": "stepTwo", "type": "command", "pending": false}};
 
         work.executeStep();
@@ -356,7 +356,7 @@ describe ('check that execute function is well done', function() {
     it('should execute a step of type command that is pending', function() {
         let factory = {execute: chai.spy('execute')};
         let work = new Work(null, null, factory);
-        work.step = "stepOne";
+        work.stepId = "stepOne";
         work.scenario = {"stepOne":{"next": "stepTwo", "type": "command", "pending": true}};
 
         work.executeStep();
@@ -368,7 +368,7 @@ describe ('check that execute function is well done', function() {
         let work = new Work(null, null, factory);
 
         work.scenario = {"stepOne":{"next": "stepTwo", "type": "external"}};
-        work.step = "stepOne";
+        work.stepId = "stepOne";
         work.executeStep();
         expect(factory.execute).to.be.called.once;
     });
@@ -378,7 +378,7 @@ describe ('check that execute function is well done', function() {
         let work = new Work(null, null, factory);
 
         work.scenario = {"stepOne":{"next": null, "type": "unknown"}};
-        work.step = "stepOne"
+        work.stepId = "stepOne"
         work.executeStep();
         expect(factory.execute).to.not.be.called;
     });
@@ -390,9 +390,9 @@ describe ('historize', function() {
         let work = new Work();
         let msg = {"value": "an answer"};
         work.scenario = {"stepOne":{"next": null, "type": "message"}};
-        work.step = "stepOne";
+        work.stepId = "stepOne";
 
-        work.historizeStep(work.step);
+        work.historizeStep(work.stepId);
         expect(work.history).to.eqls([{"step": "stepOne", "content": ""}])
     });
 
@@ -400,9 +400,9 @@ describe ('historize', function() {
         let work = new Work();
         let msg = {"value": "an answer"};
         work.scenario = {"stepOne":{"next": null, "type": "message"}};
-        work.step = "stepOne";
+        work.stepId = "stepOne";
 
-        work.historizeStep(work.step);
+        work.historizeStep(work.stepId);
         work.historize(msg);
         expect(work.history).to.eqls([{"step": "stepOne", "content": "an answer"}]);
     });

@@ -17,7 +17,7 @@ describe('ChoicePlug execution', function() {
     it('should execute a non waiting choice', function() {
         let work = {"pending": false, "id": "12345", "from": "jid@company.com", "waiting": 0};
         let step = {"value": "a choice", "waiting": 0, "list": ["a", "b", "c"]};
-        
+
         let event = {"emit": chai.spy('emit')};
         let logger = {"log": chai.spy('log')};
 
@@ -31,7 +31,7 @@ describe('ChoicePlug execution', function() {
     it('should execute a waiting message', function() {
         let work = {"pending": false, "id": "12345", "from": "jid@company.com", "waiting": 0};
         let step = {"value": "a choice", "waiting": 1000, "list": ["a", "b", "c"]};
-        
+
         let event = {"emit": chai.spy('emit')};
         let logger = {"log": chai.spy('log')};
 
@@ -48,7 +48,7 @@ describe('ChoicePlug check validity', function() {
     it('should return true if the content is valid', function() {
         let work = {"pending": false, "id": "12345", "from": "jid@company.com", "waiting": 0};
         let step = {"value": "a choice", "waiting": 0, "list": ["a", "b", "c"]};
-        
+
         let event = {"emit": chai.spy('emit')};
         let logger = {"log": chai.spy('log')};
 
@@ -60,7 +60,7 @@ describe('ChoicePlug check validity', function() {
     it('should return false if the content is not valid', function() {
         let work = {"pending": false, "id": "12345", "from": "jid@company.com", "waiting": 0};
         let step = {"value": "a choice", "waiting": 0, "list": ["a", "b", "c"]};
-        
+
         let event = {"emit": chai.spy('emit')};
         let logger = {"log": chai.spy('log')};
 
@@ -72,7 +72,7 @@ describe('ChoicePlug check validity', function() {
     it('should return false if there is no list', function() {
         let work = {"pending": false, "id": "12345", "from": "jid@company.com", "waiting": 0};
         let step = {"value": "a choice", "waiting": 0};
-        
+
         let event = {"emit": chai.spy('emit')};
         let logger = {"log": chai.spy('log')};
 
@@ -84,7 +84,7 @@ describe('ChoicePlug check validity', function() {
     it('should send a message when there is an invalid property and not valid', function() {
         let work = {"pending": false, "id": "12345", "from": "jid@company.com", "waiting": 0};
         let step = {"value": "a choice", "waiting": 0, "invalid": "", "list": ["a", "b", "c"]};
-        
+
         let event = {"emit": chai.spy('emit')};
         let logger = {"log": chai.spy('log')};
 
@@ -95,7 +95,7 @@ describe('ChoicePlug check validity', function() {
     it('should return true if the content is validated by an accept tag', function() {
         let work = {"pending": false, "id": "12345", "from": "jid@company.com", "waiting": 0};
         let step = {"value": "a choice", "waiting": 0, "list": ["a", "b", "c"], "accept": ["d", "e", "f"]};
-        
+
         let event = {"emit": chai.spy('emit')};
         let logger = {"log": chai.spy('log')};
 
@@ -107,7 +107,7 @@ describe('ChoicePlug check validity', function() {
     it('should return false if the content is not validated by an accept tag', function() {
         let work = {"pending": false, "id": "12345", "from": "jid@company.com", "waiting": 0};
         let step = {"value": "a choice", "waiting": 0, "list": ["a", "b", "c"], "accept": ["a", "b", "c"]};
-        
+
         let event = {"emit": chai.spy('emit')};
         let logger = {"log": chai.spy('log')};
 
@@ -118,7 +118,7 @@ describe('ChoicePlug check validity', function() {
 });
 
 describe('ChoicePlug Next', function() {
-    
+
     it('should return the next step', function() {
         let step = {"next": "a next step"};
         let logger = {"log": chai.spy('log')};
@@ -137,7 +137,7 @@ describe('ChoicePlug Next', function() {
         let step = {type: "choice", "list":["A", "B"], "next": ["left", "right"]};
         let work = {"id": "12345"};
         let logger = {"log": chai.spy('log')};
-        work.step = "choice";
+        work.stepId = "choice";
         work.history = [{"step": "choice", "content": "A"}];
         expect(ChoicePlug.getNextStep(work, step, logger)).is.equals("left");
     });
@@ -146,7 +146,7 @@ describe('ChoicePlug Next', function() {
         let step = {type: "choice", "list":["A", "B"], "next": ["left", "right"]};
         let work = {"id": "12345"};
         let logger = {"log": chai.spy('log')};
-        work.step = "choice";
+        work.stepId= "choice";
         work.history = [{"step": "choice", "content": "B"}];
         expect(ChoicePlug.getNextStep(work, step, logger)).is.equals("right");
     });
@@ -155,7 +155,7 @@ describe('ChoicePlug Next', function() {
         let step = {type: "choice", "list":["A", "B"], "next": ["right"]};
         let work = {"id": "12345"};
         let logger = {"log": chai.spy('log')};
-        work.step = "choice";
+        work.stepId= "choice";
         work.history = [{"step": "choice", "content": "B"}];
         expect(ChoicePlug.getNextStep(work, step, logger)).is.equals("right");
     });
@@ -164,7 +164,7 @@ describe('ChoicePlug Next', function() {
         let step = {type: "choice", "list":["A", "B"], "next": ["right"]};
         let work = {"id": "12345"};
         let logger = {"log": chai.spy('log')};
-        work.step = "choice";
+        work.stepId= "choice";
         work.history = [{"step": "choice", "content": "B"}];
         expect(ChoicePlug.getNextStep(work, step, logger)).is.equals("right");
     });
@@ -173,7 +173,7 @@ describe('ChoicePlug Next', function() {
         let step = {type: "choice", "list": null, "next": ["left", "right"]};
         let work = {"id": "12345"};
         let logger = {"log": chai.spy('log')};
-        work.step = "choice";
+        work.stepId= "choice";
         work.history = [{"step": "choice", "content": "B"}];
         expect(ChoicePlug.getNextStep(work, step, logger)).is.a("null");
     });
@@ -182,7 +182,7 @@ describe('ChoicePlug Next', function() {
         let step = {type: "choice", "list": null, "next": ["left", "right"]};
         let work = {"id": "12345"};
         let logger = {"log": chai.spy('log')};
-        work.step = "choice";
+        work.stepId= "choice";
 
         expect(ChoicePlug.getNextStep(work, step, logger)).is.a("null");
     });
@@ -191,7 +191,7 @@ describe('ChoicePlug Next', function() {
         let step = {type: "choice", "list": null, "next": ["left", "right"]};
         let work = {"id": "12345"};
         let logger = {"log": chai.spy('log')};
-        work.step = "choice";
+        work.stepId= "choice";
         work.history = [{"step": "question", "content": "B"}];
         expect(ChoicePlug.getNextStep(work, step, logger)).is.a("null");
     });
@@ -200,7 +200,7 @@ describe('ChoicePlug Next', function() {
         let step = {type: "choice", "list": ["a", "b", "c"], "next": ["left", "right"]};
         let work = {"id": "12345"};
         let logger = {"log": chai.spy('log')};
-        work.step = "choice";
+        work.stepId= "choice";
         work.history = [{"step": "question", "content": "c"}];
         expect(ChoicePlug.getNextStep(work, step, logger)).is.a("null");
     });
@@ -209,7 +209,7 @@ describe('ChoicePlug Next', function() {
         let step = {type: "choice", "list":["A", "B"], "next": ["left", "right"], "accept": ["C", "D"]};
         let work = {"id": "12345"};
         let logger = {"log": chai.spy('log')};
-        work.step = "choice";
+        work.stepId= "choice";
         work.history = [{"step": "choice", "content": "D"}];
         expect(ChoicePlug.getNextStep(work, step, logger)).is.equals("right");
     });
@@ -218,7 +218,7 @@ describe('ChoicePlug Next', function() {
         let step = {type: "choice", "list":["Left", "Right"], "next": ["left", "right"], "accept": ["L", "R"]};
         let work = {"id": "12345"};
         let logger = {"log": chai.spy('log')};
-        work.step = "choice";
+        work.stepId= "choice";
         work.history = [{"step": "choice", "content": "L"}];
         expect(ChoicePlug.getNextStep(work, step, logger)).is.equals("left");
     });

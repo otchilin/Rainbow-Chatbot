@@ -12,6 +12,7 @@ describe('Works constructor', function() {
     it('should create a new works', function() {
         let works = new Works();
         expect(works).is.a("object");
+        delete(works);
     });
 
     it('should have an empty list of work', function() {
