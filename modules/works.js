@@ -96,6 +96,14 @@ class Works {
         });
     }
 
+    getListOfActiveClientJid(jid) {
+        return this._works.filter((work) => {
+            return (!work.isFinished && !work.isAborted && !work.isBlocked);
+        }).map(work => {
+            return work.jid
+        });
+    }
+
     purge() {
         this._works.forEach((work) => {
             // purge opened tickets from the base when chatbot is stopped

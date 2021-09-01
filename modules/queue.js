@@ -18,7 +18,7 @@ class Queue {
 
         this._queueLoopCount = new promClient.Counter({
             name: 'botsdk_queue_loop_total',
-            help: 'Total number of time the queue worker has been called',
+            help: 'Total number of times the queue worker has been called',
         });
 
         this._queueLengthGauge = new promClient.Gauge({
