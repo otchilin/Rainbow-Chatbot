@@ -14,13 +14,17 @@ class SDK {
         this._logger = null;
         this._usersCache = {};
 
-        this._messageSentCounter = new promClient.Gauge({
+        this._messageSentCounter = new promClient.Counter({
             name: 'botsdk_message_sent_total',
             help: 'Total number of message sent by the bot'
         });
-        this._messageReceivedCounter = new promClient.Gauge({
+        this._messageReceivedCounter = new promClient.Counter({
             name: 'botsdk_message_received_total',
             help: 'Total number of message received by the bot'
+        });
+        this._messageReceivedFilteredCounter = new promClient.Counter({
+            name: 'botsdk_message_filtered_received_total',
+            help: 'Total number of message received by the bot after filter'
         });
     }
 
@@ -46,9 +50,10 @@ class SDK {
     listenToIncomingMessage() {
         this._nodeSDK.events.on("rainbow_onmessagereceived", (message) => {
 
+            this._messageReceivedCounter.inc();
             // Do not deal with messages sent by the bot or the bot identity connected in web, mobile...
             if (!message.cc) {
-                this._messageReceivedCounter.inc();
+                this._messageReceivedFilteredCounter.inc();
                 this._nodeSDK.im.markMessageAsRead(message);
 
                 this.getContact(message.fromJid).then(contact => {

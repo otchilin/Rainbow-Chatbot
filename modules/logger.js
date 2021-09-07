@@ -13,6 +13,7 @@ const myFormat = winston.format.printf(info => {
     return `${tsFormat()} - ${info.level}: ${info.message}`;
 });
 
+
 class Logger {
 
     constructor() {
@@ -40,6 +41,12 @@ class Logger {
 
     log(level, message) {
         this._logger.log(level, message);
+    }
+
+    setLevel(level) {
+        this._logger.transports.forEach(item => {
+            item.level = level;
+        });
     }
 
 }

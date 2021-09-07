@@ -7,19 +7,25 @@ const promClient = require("prom-client");
 
 const LOG_ID = "WORKS - ";
 
+const WATCHDOG_FREQ = 10000; // Delay in ms between 2 timeout checks
+
 class Works {
 
     /**
      * @param nodeSDK
-     * @param timeout max idle time in sec for a scenario
+     * @param options Service optional configuration (timeout, reminder, ...)
      */
-    constructor(nodeSDK, timeout = 600) {
+    constructor(nodeSDK, options = {}) {
+        this._options = options || {};
         this._event = null;
         this._logger = null;
         this._factory = null;
         this._nodeSDK = nodeSDK;
         this._works = [];
-        this._timeoutLimit = timeout * 1000; // In ms
+
+
+        this._timeoutLimit = ((options.timeout && options.timeout >= 60
+            && options.timeout <= 3600) ? options.timeout : 600) * 1000; // In ms
 
         this._counter_processed_works_total = promClient.register.getSingleMetric('botsdk_processed_scenario_total');
 
@@ -39,21 +45,44 @@ class Works {
 
             this._counter_error_works_total = new promClient.Counter({
                 name: 'botsdk_scenario_end_error_total',
-                help: 'Total number of scenario which ended in error state (abort, timeout, etc)',
+                help: 'Total number of scenario which ended in error state',
+            });
+
+            this._counter_timeout_works_total = new promClient.Counter({
+                name: 'botsdk_scenario_end_timeout_total',
+                help: 'Total number of scenario which ended in timeout state',
             });
         }
 
-
-        this._watchDogH = setInterval(this.workWatchDog, this._timeoutLimit, this);
+        // Start watchdog
+        this._watchDogH = setInterval(this.workWatchDog, WATCHDOG_FREQ, this);
     }
 
+
+    /**
+     * Manage timeouts & reminders for running works
+     * @param $this
+     */
     workWatchDog($this) {
-        let now = Date.now();
-        $this._works.forEach((work) => {
-            if (now - work.lastChange > $this._timeoutLimit) {
-                work.timeout();
-                $this._event.emit("ontaskfinished", work);
-            }
+        return new Promise((resolve) => {
+
+            $this.log("debug", LOG_ID + "workWatchDog() - start");
+
+            let now = Date.now();
+            let reminderRange = Math.round($this._timeoutLimit * .7);
+            $this._works.forEach((work) => {
+                    if (now - work.lastChange > $this._timeoutLimit) {
+                        work.timeout();
+                        $this._counter_timeout_works_total.inc();
+                        $this._event.emit("ontaskfinished", work);
+                    } else if ($this._options.reminder === true) {
+                        if (now - work.lastChange > reminderRange) {
+                            work.reminder();
+                        }
+                    }
+                }
+            );
+            resolve();
         });
     }
 
@@ -96,7 +125,7 @@ class Works {
         });
     }
 
-    getListOfActiveClientJid(jid) {
+    getListOfActiveClientJid() {
         return this._works.filter((work) => {
             return (!work.isFinished && !work.isAborted && !work.isBlocked);
         }).map(work => {
@@ -195,7 +224,7 @@ class Works {
 
     removeWork(work) {
 
-        if ([Work.STATE.BLOCKED, Work.STATE.TIMEOUT].includes(work.state)) this._counter_error_works_total.inc();
+        if ([Work.STATE.BLOCKED].includes(work.state)) this._counter_error_works_total.inc();
 
         // Find & remove the corresponding task
         let removed = _.remove(this._works, function (o) {

@@ -36,11 +36,14 @@ class RainbowAgent {
         // Initialize component
         this.options = options;
         this.logger = Logger;
+        if (options && options.logs) {
+            this.logger.setLevel((options.logs.level) || 'debug');
+        }
         this.events = new EventEmitter();
         this.queue = new Queue();
         this.tags = new Tags(tags);
         this.sdk = new NodeSDK(nodeSDK);
-        this.works = new Works(this.sdk, options.worktimeout);
+        this.works = new Works(this.sdk, options.works);
         this.delayer = new Delayer();
         this.factory = new Factory();
 
@@ -55,6 +58,11 @@ class RainbowAgent {
         this._contextTicket = null;
 
         this._isEnabled = true;
+
+        this._messageReceivedBadCounter = new promClient.Counter({
+            name: 'botsdk_bad_message_received_total',
+            help: 'Total number of bad message received by the bot (no corresponding work)'
+        });
 
         this._promRegistry = promClient.register;
 
@@ -163,6 +171,7 @@ class RainbowAgent {
 
                 // Add to queue if work
                 if (!work) {
+                    this._messageReceivedBadCounter.inc();
                     that.logger.log("warn", LOG_ID + "onmessagereceived() - Incorrect message received");
                     return;
                 }

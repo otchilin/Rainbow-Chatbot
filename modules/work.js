@@ -25,6 +25,8 @@ class Work {
         this._waiting = 0;             // When the work need to sleep
         this._external = false;         // Need to execute an external task
 
+        this._lang = 'en';               // TODO - Support internationalization
+        this._remind = false;            // Is reminder has been already sent before timeout
         this._history = [];               // History of inputs
         this._lastChange = this._created; // Used to verify is task is still active or need to be aborted
         this.log("info", LOG_ID + "constructor() - Work[" + this._id + "] (state) changed to '" + this._state + "'");
@@ -35,9 +37,10 @@ class Work {
 
     updateLastChange() {
         this._lastChange = new Date();
+        this._remind = false;
     }
 
-    get lastChange(){
+    get lastChange() {
         return this._lastChange;
     }
 
@@ -255,7 +258,7 @@ class Work {
         } else {
             if (this._stepId) {
                 nextStep = this._factory.findNextStep(this, this._stepId);
-            }else{
+            } else {
                 nextStep = this.getFirstStep();
             }
         }
@@ -309,10 +312,48 @@ class Work {
     }
 
     timeout() {
-        this._state = Work.STATE.TIMEOUT;
-        this._pending = false;
-        this._waiting = 0;
-        this.log("warn", LOG_ID + "timeout() - Work[" + this._id + "] (state) changed to '" + this._state + "'");
+
+        // Check if timeout step is defined
+        // In this case we jump the scenario to this step and let it finish
+        // else directly short circuit it to timeout state
+
+        if (this._scenario['timeoutMessage']) {
+
+            this._stepId = 'timeoutMessage';
+
+            this.log("debug", LOG_ID + "timeout() - Work[" + this._id + "] is executing timeout step");
+
+            this.historizeStep(this._stepId);
+            this._factory.execute(this, this._scenario[this._stepId]);
+        } else {
+            this._state = Work.STATE.TIMEOUT;
+            this._pending = false;
+            this._waiting = 0;
+            this.log("warn", LOG_ID + "timeout() - Work[" + this._id + "] (state) changed to '" + this._state + "'");
+        }
+    }
+
+    reminder() {
+        if (this._remind) {
+            this.log("debug", LOG_ID + "reminder() - Work[" + this._id + "] already sent");
+            return;
+        }
+        this._remind = true;
+
+        this.log("info", LOG_ID + "reminder() - Work[" + this._id + "] is about to time out");
+        // Check if timeout reminder step is defined
+        // In this case, we execute it without updating last change
+        // And put previous waiting step in next step
+
+        if (this._scenario['timeoutReminder']) {
+            this._scenario['timeoutReminder'].next = this._stepId;
+            this._stepId = 'timeoutReminder';
+
+            this.log("debug", LOG_ID + "reminder() - Work[" + this._id + "] is sending reminder before timeout");
+
+            this.historizeStep(this._stepId);
+            this._factory.execute(this, this._scenario[this._stepId]);
+        }
     }
 
     terminate() {
@@ -374,8 +415,8 @@ Work.STATE = {
     "CLOSED": "CLOSED",         // When the work is closed
     "ABORTED": "ABORTED",       // When the work is aborted (user is starting a new one)
     "BLOCKED": "BLOCKED",       // When the work is blocked due to an issue (no step)
-    "TIMEOUT":"TIMEOUT"         // When scenario has timed out generally because remote user has abndonned session
-                                // or was too long ton answer
+    "TIMEOUT": "TIMEOUT"         // When scenario has timed out generally because remote user has abndonned session
+                                 // or was too long ton answer
 };
 
 Work.QUEUE = {
