@@ -26,7 +26,7 @@ class ACDHelper {
         }
     }
 
-    checkTemplate(templateName){
+    checkTemplate(templateName) {
         return this._templates && this._templates[templateName] !== 'undefined';
     }
 
@@ -61,8 +61,8 @@ class ACDHelper {
         try {
             files = await fsPromises.readdir(this._templatesPath);
         } catch (err) {
-                this.log("error", LOG_ID + "loadTemplates() - Error while reading template dir");
-                return;
+            this.log("error", LOG_ID + "loadTemplates() - Error while reading template dir");
+            return;
         }
 
         if (files.length > 0) {
@@ -91,7 +91,8 @@ class ACDHelper {
 
                 }
 
-                this.log("info", LOG_ID + "loadTemplates() - " + this._templates.length + " templates loaded successfully");
+                this.log("info", LOG_ID + "loadTemplates() - " + Object.keys(this._templates).length
+                    + " templates loaded successfully");
 
             }
         }

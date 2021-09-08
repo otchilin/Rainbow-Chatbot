@@ -84,6 +84,10 @@ class RainbowAgent {
         return this._isEnabled;
     }
 
+    version() {
+        return pkg.version;
+    }
+
     start() {
 
         let that = this;
