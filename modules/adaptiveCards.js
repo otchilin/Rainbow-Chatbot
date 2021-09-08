@@ -91,7 +91,7 @@ class ACDHelper {
 
                 }
 
-                this.log("i", LOG_ID + "loadTemplates() - " + this._templates.length + " templates loaded successfully");
+                this.log("info", LOG_ID + "loadTemplates() - " + this._templates.length + " templates loaded successfully");
 
             }
         }
