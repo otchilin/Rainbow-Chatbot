@@ -42,7 +42,7 @@ class RainbowAgent {
         this.events = new EventEmitter();
         this.queue = new Queue();
         this.tags = new Tags(tags);
-        this.sdk = new NodeSDK(nodeSDK);
+        this.sdk = new NodeSDK(nodeSDK, options.sdk);
         this.works = new Works(this.sdk, options.works);
         this.delayer = new Delayer();
         this.factory = new Factory();

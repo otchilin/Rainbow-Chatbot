@@ -8,11 +8,12 @@ const promClient = require('prom-client');
 
 class SDK {
 
-    constructor(nodeSDK) {
+    constructor(nodeSDK, options = {}) {
         this._nodeSDK = nodeSDK;
         this._event = null;
         this._logger = null;
         this._usersCache = {};
+        this._options = options || {};
 
         this._messageSentCounter = new promClient.Counter({
             name: 'botsdk_message_sent_total',
@@ -54,7 +55,10 @@ class SDK {
             // Do not deal with messages sent by the bot or the bot identity connected in web, mobile...
             if (!message.cc) {
                 this._messageReceivedFilteredCounter.inc();
-                this._nodeSDK.im.markMessageAsRead(message);
+
+                if (this._options.markMessageAsRead === undefined || this._options.markMessageAsRead) {
+                    this._nodeSDK.im.markMessageAsRead(message);
+                }
 
                 this.getContact(message.fromJid).then(contact => {
                     let msgType = Message.MESSAGE_TYPE.MESSAGE;
