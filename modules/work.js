@@ -29,7 +29,7 @@ class Work {
         this._remind = false;            // Is reminder has been already sent before timeout
         this._history = [];               // History of inputs
         this._lastChange = this._created; // Used to verify is task is still active or need to be aborted
-        this.log("info", LOG_ID + "constructor() - Work[" + this._id + "] (state) changed to '" + this._state + "'");
+        this.log("debug", LOG_ID + "constructor() - Work[" + this._id + "] (state) changed to '" + this._state + "'");
 
 
     }
@@ -126,7 +126,7 @@ class Work {
 
     set stepId(stepId) {
         this._stepId = stepId;
-        this.log("info", LOG_ID + "step() - Work[" + this._id + "] (step) changed to '" + this._stepId + "'");
+        this.log("debug", LOG_ID + "step() - Work[" + this._id + "] (step) changed to '" + this._stepId + "'");
     }
 
     set history(history) {
@@ -135,7 +135,7 @@ class Work {
 
     set forcedNextStep(stepId) {
         this._forcedNextStepId = stepId;
-        this.log("info", LOG_ID + "step() - Work[" + this._id + "] (nextStep) forced to '" + this._forcedNextStepId + "'");
+        this.log("debug", LOG_ID + "step() - Work[" + this._id + "] (nextStep) forced to '" + this._forcedNextStepId + "'");
     }
 
     set scenario(scenario) {
@@ -156,7 +156,7 @@ class Work {
 
     set state(state) {
         this._state = state;
-        this.log("info", LOG_ID + "jid() - Work[" + this._id + "] (state) changed to '" + this._state + "'");
+        this.log("debug", LOG_ID + "jid() - Work[" + this._id + "] (state) changed to '" + this._state + "'");
     }
 
     set tag(tag) {
@@ -165,12 +165,12 @@ class Work {
 
     set jid(jid) {
         this._fromJID = jid;
-        this.log("info", LOG_ID + "jid() - Work[" + this._id + "] (jid) changed to '" + jid + "'");
+        this.log("debug", LOG_ID + "jid() - Work[" + this._id + "] (jid) changed to '" + jid + "'");
     }
 
     set from(user) {
         this._from = user;
-        this.log("info", LOG_ID + "from() - Work[" + this._id + "] (from) changed to '" + CircularJSON.stringify(user) + "'");
+        this.log("debug", LOG_ID + "from() - Work[" + this._id + "] (from) changed to '" + CircularJSON.stringify(user) + "'");
     }
 
     set pending(isPending) {
@@ -182,14 +182,14 @@ class Work {
     }
 
     historizeStep(step) {
-        this.log("info", LOG_ID + "historizeStep() - Work[" + this._id + "] (history) added step '" + step + "'");
+        this.log("debug", LOG_ID + "historizeStep() - Work[" + this._id + "] (history) added step '" + step + "'");
         this._history.push({"step": this._stepId, "content": ""});
     }
 
     historize(msg) {
         let that = this;
 
-        this.log("info", LOG_ID + "historize() - Work[" + this._id + "] (history) added content '" + msg.value + "' for step '" + this._stepId + "'");
+        this.log("debug", LOG_ID + "historize() - Work[" + this._id + "] (history) added content '" + msg.value + "' for step '" + this._stepId + "'");
 
         let historyItem = this._history.find((item) => {
             return item.step === that._stepId;
@@ -208,7 +208,7 @@ class Work {
         this.historizeStep(this._stepId);
 
         if (this._stepId && this._scenario) {
-            this.log("info", LOG_ID + "executeStep() - Work[" + this._id + "] is executing step " + this._stepId);
+            this.log("debug", LOG_ID + "executeStep() - Work[" + this._id + "] is executing step " + this._stepId);
 
             let step = this._scenario[this._stepId];
 
@@ -226,7 +226,7 @@ class Work {
         if (!this._stepId) {
             this.block();
         }
-        this.log("info", LOG_ID + "move() - Work[" + this._id + "] (step) changed from '" + old_step + "' to '" + this._stepId + "'");
+        this.log("debug", LOG_ID + "move() - Work[" + this._id + "] (step) changed from '" + old_step + "' to '" + this._stepId + "'");
     }
 
     jump() {
@@ -234,7 +234,7 @@ class Work {
         if (!this._stepId) {
             this.block();
         }
-        this.log("info", LOG_ID + "jump() - Work[" + this._id + "] (step) changed to '" + this._stepId + "'");
+        this.log("debug", LOG_ID + "jump() - Work[" + this._id + "] (step) changed to '" + this._stepId + "'");
     }
 
     getFirstStep() {
@@ -249,7 +249,7 @@ class Work {
 
         let nextStep = null;
 
-        this.log("info", LOG_ID + "getNextStep() - Enter");
+        this.log("debug", LOG_ID + "getNextStep() - Enter");
 
 
         if (this._forcedNextStepId) {
@@ -263,7 +263,7 @@ class Work {
             }
         }
 
-        this.log("info", LOG_ID + "getNextStep() - Work[" + this._id + "] found next step " + nextStep);
+        this.log("debug", LOG_ID + "getNextStep() - Work[" + this._id + "] found next step " + nextStep);
 
         return nextStep;
     }
@@ -283,7 +283,7 @@ class Work {
     hasNoMoreStep() {
 
         if (this.pending) {
-            this.log("info", LOG_ID + "hasNoMoreStep() - Work[" + this._id + "] need inputs for the current step " + this._stepId);
+            this.log("debug", LOG_ID + "hasNoMoreStep() - Work[" + this._id + "] need inputs for the current step " + this._stepId);
 
             return false;
         }
@@ -291,11 +291,11 @@ class Work {
         let nextStep = this.getNextStep();
 
         if (nextStep && (nextStep in this._scenario)) {
-            this.log("info", LOG_ID + "hasNoMoreStep() - Work[" + this._id + "] has a next step " + nextStep + " defined");
+            this.log("debug", LOG_ID + "hasNoMoreStep() - Work[" + this._id + "] has a next step " + nextStep + " defined");
             return false;
         }
 
-        this.log("info", LOG_ID + "hasNoMoreStep() - Work[" + this._id + "] has no more step in its scenario");
+        this.log("debug", LOG_ID + "hasNoMoreStep() - Work[" + this._id + "] has no more step in its scenario");
         return true;
     }
 
@@ -340,7 +340,7 @@ class Work {
         }
         this._remind = true;
 
-        this.log("info", LOG_ID + "reminder() - Work[" + this._id + "] is about to time out");
+        this.log("debug", LOG_ID + "reminder() - Work[" + this._id + "] is about to time out");
         // Check if timeout reminder step is defined
         // In this case, we execute it without updating last change
         // And put previous waiting step in next step
@@ -349,7 +349,7 @@ class Work {
             this._scenario['timeoutReminder'].next = this._stepId;
             this._stepId = 'timeoutReminder';
 
-            this.log("debug", LOG_ID + "reminder() - Work[" + this._id + "] is sending reminder before timeout");
+            this.log("info", LOG_ID + "reminder() - Work[" + this._id + "] is sending reminder before timeout");
 
             this.historizeStep(this._stepId);
             this._factory.execute(this, this._scenario[this._stepId]);
@@ -400,7 +400,7 @@ class Work {
                 break;
         }
         if (hasChanged) {
-            this.log("info", LOG_ID + "next() - Work[" + this._id + "] (state) changed to '" + this._state + "'");
+            this.log("debug", LOG_ID + "next() - Work[" + this._id + "] (state) changed to '" + this._state + "'");
         }
     }
 }
