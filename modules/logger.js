@@ -1,53 +1,53 @@
-"use strict";
+'use strict';
 
-const winston = require("winston");
-const LOG_ID = "STARTER/LOGS - ";
+const winston = require('winston');
+const LOG_ID = 'STARTER/LOGS - ';
 
 const tsFormat = () => {
-    let date = new Date();
-    return date.toLocaleDateString() + " " + date.toLocaleTimeString() + " [" + date.valueOf() + "]";
+  let date = new Date();
+  return date.toLocaleDateString() + ' ' + date.toLocaleTimeString() + ' [' + date.valueOf() + ']';
 };
 
 const myFormat = winston.format.printf(info => {
-    //return `${info.timestamp} [${info._processInfo.pid}] ${info.level}: ${info.message}`;
-    return `${tsFormat()} - ${info.level}: ${info.message}`;
+  //return `${info.timestamp} [${info._processInfo.pid}] ${info.level}: ${info.message}`;
+  return `${tsFormat()} - ${info.level}: CHATBOT_SDK|${info.message}`;
 });
 
 
 class Logger {
 
-    constructor() {
+  constructor() {
 
-        this._logger = winston.createLogger({
-            format: winston.format.combine(
-                // winston.format.colorize({ all: logColor }),
-                winston.format.simple(),
-                //winston.format.label({ label: 'right meow!' }),
-                winston.format.timestamp(),
-                myFormat
-                //winston.format.prettyPrint()
-            ),
-            transports: [
-                new (winston.transports.Console)({
-                    level: "debug"
-                })
-            ]
-        });
+    this._logger = winston.createLogger({
+      format: winston.format.combine(
+        // winston.format.colorize({ all: logColor }),
+        winston.format.simple(),
+        //winston.format.label({ label: 'right meow!' }),
+        winston.format.timestamp(),
+        myFormat
+        //winston.format.prettyPrint()
+      ),
+      transports: [
+        new (winston.transports.Console)({
+          level: 'debug'
+        })
+      ]
+    });
 
-        this._logger.log("debug", LOG_ID + "-------------------------");
-        this._logger.log("debug", LOG_ID + "BOT STARTER-KIT");
-        this._logger.log("debug", LOG_ID + "constructor()");
-    }
+    this._logger.log('debug', LOG_ID + '-------------------------');
+    this._logger.log('debug', LOG_ID + 'BOT STARTER-KIT');
+    this._logger.log('debug', LOG_ID + 'constructor()');
+  }
 
-    log(level, message) {
-        this._logger.log(level, message);
-    }
+  log(level, message) {
+    this._logger.log(level, message);
+  }
 
-    setLevel(level) {
-        this._logger.transports.forEach(item => {
-            item.level = level;
-        });
-    }
+  setLevel(level) {
+    this._logger.transports.forEach(item => {
+      item.level = level;
+    });
+  }
 
 }
 
