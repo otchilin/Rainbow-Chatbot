@@ -415,7 +415,7 @@ Work.STATE = {
     "CLOSED": "CLOSED",         // When the work is closed
     "ABORTED": "ABORTED",       // When the work is aborted (user is starting a new one)
     "BLOCKED": "BLOCKED",       // When the work is blocked due to an issue (no step)
-    "TIMEOUT": "TIMEOUT"         // When scenario has timed out generally because remote user has abndonned session
+    "TIMEOUT": "TIMEOUT"         // When scenario has timed out generally because remote user has abandoned session
                                  // or was too long ton answer
 };
 
