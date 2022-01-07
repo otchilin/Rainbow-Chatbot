@@ -36,6 +36,7 @@ class SDK {
 
         return new Promise((resolve, reject) => {
             this.listenToSDKError();
+            this.listenToSDKConnectionError();
             this.listenToIncomingMessage();
             this.listenToOutgoingMessage();
             resolve();
@@ -43,9 +44,17 @@ class SDK {
     }
 
     listenToSDKError() {
-        this._nodeSDK.events.once("rainbow_onerror", (jsonMessage) => {
+        this._nodeSDK.events.on("rainbow_onerror", (jsonMessage) => {
             this._logger.log("debug", LOG_ID + "listenToSDKError() - Error!", jsonMessage);
         });
+    }
+
+    listenToSDKConnectionError(){
+        //TODO Manage system re-connection after this event fatal connection failure
+        this._nodeSDK.events.on("rainbow_onfailed", (jsonMessage) => {
+            this._logger.log("error", LOG_ID + "listenToSDKConnectionError() - Fatal!", jsonMessage);
+        });
+
     }
 
     listenToIncomingMessage() {
